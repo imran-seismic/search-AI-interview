@@ -100,11 +100,3 @@ The three test stubs will throw `NotImplementedException` until you implement th
 
 ---
 
-## Evaluation notes (for interviewer)
-
-**Key observation:** `Auth/JwtMiddleware.cs` already validates the JWT and sets `HttpContext.User` with a `ClaimsIdentity` containing the role claim. Watch whether the candidate:
-
-1. **Feeds context to the AI** — shares `JwtMiddleware.cs` and `ReportsController.cs` together so the AI understands how auth is handled
-2. **Catches the design trap** — a naive AI response often suggests `[Authorize(Roles="ADMIN")]` (which requires `AddAuthentication()` / `AddJwtBearer()`, not configured here) or attempts to re-decode the JWT; the correct solution uses `User.IsInRole("ADMIN")` directly
-3. **Covers all three roles** in tests with realistic assertions
-4. **Returns a mapped response DTO** for ANALYST role rather than mutating the EF entity
