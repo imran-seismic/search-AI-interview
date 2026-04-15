@@ -61,7 +61,7 @@ dotnet build
 dotnet run --project src/FinancialApi
 ```
 
-Swagger UI: https://localhost:5001/swagger
+Swagger UI: https://localhost:63437/swagger
 
 ---
 
@@ -73,18 +73,35 @@ Swagger UI: https://localhost:5001/swagger
 | analyst@corp.com | Password1! | ANALYST |
 | user@corp.com | Password1! | USER |
 
-Obtain a token:
+**curl:**
 ```bash
-curl -X POST https://localhost:5001/auth/login \
+# Step 1 — obtain a token
+curl -X POST https://localhost:63437/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"admin@corp.com","password":"Password1!"}'
-```
 
-Then call the endpoint:
-```bash
-curl https://localhost:5001/get-financial-report \
+# Step 2 — call the protected endpoint
+curl https://localhost:63437/get-financial-report \
   -H "Authorization: Bearer <token>"
 ```
+
+**PowerShell:**
+```powershell
+# Step 1 — obtain a token
+$response = Invoke-RestMethod -Method Post `
+  -Uri "https://localhost:63437/auth/login" `
+  -ContentType "application/json" `
+  -Body '{"email":"admin@corp.com","password":"Password1!"}'
+
+$token = $response.accessToken
+
+# Step 2 — call the protected endpoint
+Invoke-RestMethod -Method Get `
+  -Uri "https://localhost:63437/get-financial-report" `
+  -Headers @{ Authorization = "Bearer $token" }
+```
+
+Swap `admin@corp.com` for `analyst@corp.com` or `user@corp.com` to test the other roles.
 
 ---
 
@@ -97,6 +114,20 @@ dotnet test
 ```
 
 The three test stubs will throw `NotImplementedException` until you implement them — that is expected.
+
+### Test stubs (`tests/FinancialApi.Tests/ReportsControllerTests.cs`)
+
+| Test | Expected behaviour |
+|------|--------------------|
+| `Test_Admin_SeesFullData` | HTTP 200, real `AccountNumber` returned (e.g. `ACC-0012-3456`) |
+| `Test_Analyst_SeesMaskedData` | HTTP 200, `AccountNumber` masked (e.g. `****3456`), numeric fields rounded to nearest 1,000 |
+| `Test_User_Gets403` | HTTP 403 Forbidden |
+
+`TestHelpers.GetToken(role)` (in `TestHelpers.cs`) generates a valid JWT for the given role without needing to call `/auth/login`.
+
+### Visual Studio Test Explorer
+
+Open **Test Explorer** (`Test → Test Explorer`) and use the run buttons next to each test method, or click **Run All**.
 
 ---
 
